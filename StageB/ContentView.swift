@@ -9,51 +9,56 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
-
+    
+    @State private var items: [StackItem] = [];
+    @State private var configuring: Bool = false;
+    
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
+        ZStack {
+            Rectangle().fill(BACKGROUND)
+            StackView(items: $items)
+            
+            // Management Overlay
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    Button(action: {
+                        configuring = true;
+                    }) {
+                        Image(systemName: "gearshape.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: SPACING_200, height: SPACING_200)
+                            .padding(SPACING)
+                            .background(BACKGROUND_300)
+                            .foregroundColor(FOREGROUND)
+                            .clipShape(RoundedRectangle(cornerRadius: BORDER_RADIUS, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: BORDER_RADIUS, style: .continuous)
+                                    .stroke(BORDER_300, lineWidth: BORDER_WIDTH)
+                            )
+                            .shadow(radius: SHADOW_RADIUS_200)
                     }
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .onDelete(perform: deleteItems)
-            }
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-            .toolbar {
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
+            }.padding(SPACING_200)
+            
+            // Configure Overlay
+            
+            if (configuring) {
+                Rectangle().fill(Color(hex: 0x000000, alpha: 0.25)).onTapGesture {
+                    configuring = false;
                 }
-            }
-        } detail: {
-            Text("Select an item")
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+                ConfigureView(updateConfig: updateConfig)
             }
         }
-    }
-}
 
-#Preview {
-    ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+    }
+    
+    func updateConfig(i: [StackItem]) {
+        items = i;
+        configuring = false;
+    }
+    
 }

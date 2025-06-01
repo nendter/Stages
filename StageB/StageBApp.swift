@@ -10,23 +10,50 @@ import SwiftData
 
 @main
 struct StageBApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
-
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate;
+    
     var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
-        .modelContainer(sharedModelContainer)
+        Settings {}
+    }
+}
+
+/* Delegate */
+
+class AlwaysOnTopPanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
+}
+
+class AlwaysOnTopWindow: NSWindow {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
+}
+
+class AppDelegate: NSObject, NSApplicationDelegate {
+    var panel: NSPanel!
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        let contentView = ContentView()
+
+        panel = AlwaysOnTopPanel(
+            contentRect: NSMakeRect(200, 200, 1200, 800),
+            styleMask: [.titled, .closable, .resizable, .fullSizeContentView, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+
+        panel.isFloatingPanel = true
+        panel.hidesOnDeactivate = false
+        panel.level = .mainMenu
+        panel.collectionBehavior = [
+            .canJoinAllSpaces,
+            .fullScreenAuxiliary,
+            .stationary,
+            .ignoresCycle
+        ]
+        panel.isOpaque = false
+        panel.contentView = NSHostingView(rootView: contentView)
+
+        panel.makeKeyAndOrderFront(nil)
     }
 }
